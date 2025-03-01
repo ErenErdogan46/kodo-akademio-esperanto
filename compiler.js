@@ -3,7 +3,7 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 const keywords = new Set(["konst", "montru", "dum", "se", "alie", "ĉesu", "daŭrigu", "funkcio", "fino", "enigu"]);
-const operators = { "+": "+", "-": "-", "*": "*", "/": "/" };
+const operators = { "+": "+", "-": "-", "*": "*", "/": "/", "=": "=" };
 
 function lexer(code) {
     const tokens = [];
@@ -25,6 +25,7 @@ function lexer(code) {
         }
     });
 
+    console.log("Lexer Output:", tokens);
     return tokens;
 }
 
@@ -35,12 +36,12 @@ function parser(tokens) {
     while (i < tokens.length) {
         const [type, value] = tokens[i];
 
-        if (type === "IDENTIFIER" && i + 2 < tokens.length && tokens[i + 1][0] === "=") {
+        if (type === "IDENTIFIER" && i + 2 < tokens.length && tokens[i + 1][0] === "OPERATOR" && tokens[i + 1][1] === "=") {
             let expressionTokens = tokens.slice(i + 2);
             let expressionTree = parseExpression(expressionTokens);
             ast.push(["ASSIGN", value, expressionTree]);
             i += 2 + expressionTokens.length;
-        } else if (type === "KONST" && i + 3 < tokens.length && tokens[i + 2][0] === "=") {
+        } else if (type === "KONST" && i + 3 < tokens.length && tokens[i + 2][0] === "OPERATOR" && tokens[i + 2][1] === "=") {
             let expressionTokens = tokens.slice(i + 3);
             let expressionTree = parseExpression(expressionTokens);
             ast.push(["CONST", tokens[i + 1][1], expressionTree]);
@@ -55,6 +56,7 @@ function parser(tokens) {
         }
     }
 
+    console.log("Parser Output:", ast);
     return ast;
 }
 
@@ -106,6 +108,9 @@ function interpreter(ast) {
             } else if (type === "OPERATOR") {
                 let b = stack.pop();
                 let a = stack.pop();
+                if (a === undefined || b === undefined) {
+                    throw new Error("Sintaksa Eraro: Mankas operandon!");
+                }
                 if (value === "+") stack.push(a + b);
                 if (value === "-") stack.push(a - b);
                 if (value === "*") stack.push(a * b);
@@ -117,6 +122,7 @@ function interpreter(ast) {
     }
 
     ast.forEach(node => {
+        console.log("Interpreting Node:", node);
         if (node[0] === "ASSIGN") {
             if (constants[node[1]]) {
                 throw new Error(`Eraro: '${node[1]}' estas konstanto kaj ne povas esti ŝanĝita.`);
